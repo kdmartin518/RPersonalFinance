@@ -2,41 +2,6 @@ library(tidyverse)
 library(tidyr)
 library("lubridate")   
 
-# I've structures my personal finance planning like so:
-# Budget.csv. A spreadsheet of anticipated monthly expenses.Includes these columns:
-
-  # Accountor	      Character   Name of person responsible for this expense
-  # Bank Account	  Character   Name of bank account that this expense will be posted to.
-  # Category	      Character   Descriptive type for expense.
-  # Subcategory	    Character   Secondary descriptive type for expense.
-  # Due Day	        Character   Day of month when expense will post. Can be an integer, interpreted as day of month, or a character, interpreted as day of week and will then spread that expense across the month into four transactions. 
-  # Name	          Character   Name or description of expense.
-  # Monthly Amount	Numeric     Dollar amount of expense
-  # Autopay	        Logical     Whether expense has autopay activated.
-  # Description     Character   Misc. notes
-
-# Transfers.csv A spreadsheet of antipated transfers between bank accounts. 
-  #Its columns are the same as budget.csv EXCEPT "Bank account" is replaced with
-
-  # Bank Account To
-  # Bank Account From
-
-  #And "Subcategory" is omitted.
-  
-# I chose to separate these two sheets because if transfers were to be listed in budget.csv,
-  # each transaction would be listed twice: once for the bank account "to" and once for the bank account "from".
-  # By using a separate spreadsheet, I can format it differently and include a "to" and "from" column, 
-  # which condenses all transfers into a single line.
-  
-  # PS If you think this system is incomprehensible and bad, send me an email with your suggestion! 
-  # I sincerely welcome it. But I will consider the system itself outside the scope of this project,
-  # which instead is focused on writing an R script to acommodate its idosyncracies. 
-
-# I would like to rename budgets.csv to bills.csv, and include non-scheduled expenses in another file.
-
-# The first thing to do is to import the CSVs into a set of dataframes, 
-  # split on the "Bank Account" (or corresponding To and From) columns.
-
 import_bills <- function(csv) {
   
   #Import CSV
@@ -150,7 +115,17 @@ merge_bankaccounts_lists <- function(list1,list2) {
   # You can write in an integer day number or a weekday name, 
   # and later we can calculate a real date for them.
 
-# Convert bank account days to true dates
+
+#' Apply true month dates to bank account.
+#'
+#' Given a generic bank account DataFrame and a month and year, generate the actual 
+#' dates that the bank account's transactions will land on in that month.
+#' @param bankaccount An object of class "DataFrame". An individual bank account.
+#' @param month_num An object of class "integer". Number of intended month.
+#' @param year An object of class "integer". Year.
+#' @return Returns an object of class "DataFrame". A DataFrame with the bank account data and real date values. Sorted by date.
+#' @examples
+#' januaryTransactions <- generate_month_from_bankaccount(genericTransactions,1,2022)
 generate_month_from_bankaccount <- function(bankaccount,month_num,year) {
   
   #Split number days and named weekdays into their own columns.
@@ -235,7 +210,6 @@ get_weekdays_in_month <- function(weekday_name,month_num,year) {
 }
 
 generate_days_in_month <- function(month_num,year) {
-  #Given a bank account calendar, generate real date data
   starting_date <- mdy(paste(month_num,1,year,sep = '-'))
   
   length <- days_in_month(starting_date)

@@ -1,0 +1,59 @@
+---
+title: "RPersonalFinance"
+output: html_notebook
+---
+
+# Intro
+
+As a way to cut my teeth on R, I decided to write some scripts that would automate some calculations and visualizations which I had already been using spreadsheets to do previously. Included in Scripts.R are the functions I've written along with documentation, and below are some examples for how to use them to generate reports. 
+
+# My Particular Way of Doing Things
+
+## Bills.csv
+
+A spreadsheet of anticipated monthly expenses.Includes these columns:
+
+| Column Name    |  Data Type |  Description                                               |
+|:---------------|:-----------|:-----------------------------------------------------------|
+| Accountor      |  Character |  Name of person responsible for this expense               |
+| Bank Account   |  Character |  Name of bank account that this expense will be posted to. |
+| Category       |  Character |  Descriptive type for expense.                             |
+| Subcategory    |  Character |  Secondary descriptive type for expense.                   |
+| Due Day        |  Character |  Day of month when expense will post. \*                   |
+| Name           |  Character |  Name or description of expense.                           |
+| Monthly Amount |  Numeric   |  Dollar amount of expense                                  |
+| Description    |  Character |  Misc. notes                                               |  
+
+
+## Transfers.csv 
+
+A spreadsheet of antipated transfers between bank accounts. 
+
+Its columns are the same as budget.csv EXCEPT "Bank account" is replaced with "Bank Account To" and "Bank Account From" and "Subcategory" is omitted.
+
+| Column Name       |  Data Type |  Description                                               |
+|:------------------|:-----------|:-----------------------------------------------------------|
+| Accountor         |  Character |  Name of person responsible for this expense               |
+| Bank Account To   |  Character |  Name of bank account to *credit* "Monthly Amount" *to*.   |
+| Bank Account From |  Character |  Name of bank account to *debit* "Monthly Amount" *from*.  |
+| Category          |  Character |  Descriptive type for expense.                             |
+| Due Day           |  Character |  Day of month when expense will post. \*                   |
+| Name              |  Character |  Name or description of expense.                           |
+| Monthly Amount    |  Numeric   |  Dollar amount of expense                                  |
+| Description       |  Character |  Misc. notes                                               |
+
+  
+I chose to separate these two sheets because if transfers were to be listed in budget.csv, each transaction would be listed twice: once for the bank account "to" and once for the bank account "from". By using a separate spreadsheet, I can format it differently and include a "to" and "from" column, which condenses all transfers into a single line. 
+
+PS If you think this system is incomprehensible and bad, send me an email with your suggestion! I sincerely welcome it. But I will consider the system itself outside the scope of this project, which instead is focused on writing an R script to accommodate its idiosyncrasies. 
+
+
+```{r}
+
+source('Improved.R')
+bills <- import_bills('bills.csv')
+convert_bankaccount_to_month(bills[[5]],1,2022)
+
+```
+
+
