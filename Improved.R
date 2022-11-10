@@ -16,6 +16,9 @@ import_bills <- function(csv) {
     monthly_amount = as.numeric(gsub("\\$|,","",file$Monthly.Amount))
   )
   
+  #remove NA day values
+  bills <- filter(bills,!is.na(bills$day))
+  
   #Fill empty monthly_amount cells with 0.
   bills$monthly_amount[is.na(bills$monthly_amount)] <- 0
   
@@ -165,23 +168,46 @@ generate_month_from_bankaccount <- function(bankaccount,month_num,year) {
   
 }
 
+#' Convert and split a DataFrame of weekday transactions into frame with true dates.
+#'
+#' Given a month, year, and a DataFrame with a list of transactions listed as occurring weekly on every "___day" in a month,
+#' Find the true date of each of those weekdays in that month and create a new transaction line with 1/4 of the "monthly_amount".
+#' @param weekday_rows An object of class "DataFrame". Contains rows of transaction information where "day" is a weekday like "Monday".
+#' @param month_num An object of class "integer". Number of intended month.
+#' @param year An object of class "integer". Year.
+#' @return Returns an object of class "DataFrame". A DataFrame of transactions with actual dates in the given month.
+#' @examples#' 
+#' #weekday_rows contains:
+#' # a transaction that occurs on Monday with a monthly total amount of $100. 
+#' januaryTransactions <- generate_month_from_bankaccount(transactions,1,2022) 
+#' #januaryTransactions contains: 
+#' # $25 on 01/03/22
+#' # $25 on 01/10/22
+#' # $25 on 01/17/22
+#' # $25 on 01/24/22
+#' # $25 on 01/31/22
 split_weekdays_into_dates <- function(weekday_rows,month_num,year) {
   
+  # Prep DataFrame for output.
   dated_rows <- data.frame(
                   date=ymd(),
                   name=as.character(),
                   amount=as.numeric()
                 )
   
+  # Loop through each weekday in weekday_rows
   for (i in 1:length(weekday_rows$weekday_name)) {
     
     weekday_name <- weekday_rows$weekday_name[i]
-    
+    #Skip if empty.
     if (is.na(weekday_name)) next
     
+    # Split weekday into set of real dates with 1/4 the monthly value.
     date <- get_weekdays_in_month(input_date,weekday_name)
     name <- weekday_rows$name[i]
     amount <- (weekday_rows$amount[i])/4
+    
+    # Bind to output
     df <- data.frame(date,name,amount)
     dated_rows <- rbind(dated_rows,df)
     
@@ -191,10 +217,18 @@ split_weekdays_into_dates <- function(weekday_rows,month_num,year) {
   
 }
 
+#' Find the actual dates that a given weekday land on in a month.
+#'
+#' @param weekday_name The name of a given week.
+#' @param month_num An object of class "integer". Number of intended month.
+#' @param year An object of class "integer". Year.
+#' @return Returns an object of class "List". A List with the true dates.
+#' @examples
+#' Example input: Oct, 2022, Friday
+#' Example output: 10/7/22, 10/14/22, 10/21/22, 10/28/22
 get_weekdays_in_month <- function(weekday_name,month_num,year) {
   
-  #Example input: Oct, 2022, Friday
-  #Example output: 10/7/22, 10/14/22, 10/21/22, 10/28/22
+  # To be honest, I think this is around where I started to invoke some dark magic that I don't understand and don't want to ask too much about.
   
   starting_date <- mdy(paste(month_num,1,year,sep = '-'))
   length <- days_in_month(starting_date)
@@ -206,9 +240,15 @@ get_weekdays_in_month <- function(weekday_name,month_num,year) {
   
   df <- filter(df, weekday == wday_name[[weekday_name]])
   
-  return(df$date) #Boy it works but it's starting to get pretty loosey goosey in here.
+  return(df$date) 
 }
 
+#' Generate a DataFrame with one column, a list of days in a given month from 1-n.
+#'
+#' @param month_num An object of class "integer". Number of intended month.
+#' @param year An object of class "integer". Year.
+#' @return Returns an object of class "DataFrame".
+#' @examples
 generate_days_in_month <- function(month_num,year) {
   starting_date <- mdy(paste(month_num,1,year,sep = '-'))
   
@@ -220,11 +260,18 @@ generate_days_in_month <- function(month_num,year) {
   return(df)
 }  
 
+#' Given a generic bank account Data Frame, return a calendar of dates in a specific month with aggregate transaction amounts.
+#'
+#' @param bankaccount A generic bank account DataFrame.
+#' @param month_num An object of class "integer". Number of intended month.
+#' @param year An object of class "integer". Year.
+#' @return Returns an object of class "DataFrame". 
+#' @examples
 generate_calendar_from_bankaccount <- function(bankaccount,month_num,year) {    
   
   ShortCalendar <- generate_month_from_bankaccount(bankaccount,month_num,year)
-  
-  date <- mdy(paste(month_num,1,year,sep = '-'))
+
+  date <- ymd(paste(year,month_num,1,sep = "-"))
   
   ShortCalendar <-
     ShortCalendar %>% 
@@ -236,31 +283,35 @@ generate_calendar_from_bankaccount <- function(bankaccount,month_num,year) {
     generate_days_in_month(month_num,year),
     ShortCalendar, by="date", all=TRUE) 
   
+  
   calendar[is.na(calendar)] <- 0 #Replace NA values with 0.
   
   return(calendar)
   
 }
 
+#' Generate an a calendar of transactions for an arbitrary number of months.
+#'
+#' @param bankaccount A Generic bank account DataFrame.
+#' @param start_month_num An object of class "integer". Number of first month in calendar.
+#' @param year An object of class "integer". First year of calendar.
+#' @param num_months How many months to generate.
+#' @return Returns an object of class "DataFrame"
+#' @examples
 generate_seriesof_calendars <- function(bankaccount,start_month_num,start_year,num_months) {
-  date <- ymd(paste(start_year,start_month,1,sep = " "))
-  lastCalendar <- generate_calendar_from_bankaccount(bankaccount,date)
+  date <- ymd(paste(start_year,start_month_num,1,sep = "-"))
+  lastCalendar <- generate_calendar_from_bankaccount(bankaccount,start_month_num,start_year)
   looongCalendar <- data.frame()
   looongCalendar <- rbind(looongCalendar,lastCalendar)
   for (i in 2:num_months-1) {
     
-    month(date) <- month(date)+1
-    
-    lastCalendar <- generate_calendar_from_bankaccount(bankaccount,date)
+    lastCalendar <- generate_calendar_from_bankaccount(bankaccount,start_month_num+i,start_year)
     looongCalendar <- rbind(looongCalendar,lastCalendar)
   }
   return(looongCalendar)
 }
 
-get_ending_balance <- function(calendar) {   
-  return(calendar$balance[length(calendar$balance)])
-}
-
 bills <- import_bills('bills.csv')
 
-convert_bankaccount_to_month(bills[[5]],1,2022)
+#generate_seriesof_calendars(bills[[5]],1,2022,6)
+generate_seriesof_calendars(bills[[5]],1,2022,6)
