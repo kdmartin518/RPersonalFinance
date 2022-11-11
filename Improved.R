@@ -2,7 +2,18 @@ library(tidyverse)
 library(tidyr)
 library("lubridate")   
 
+wday_name <- list()
+wday_name[["Sunday"]] <- 1
+wday_name[["Monday"]] <- 2
+wday_name[["Tuesday"]] <- 3
+wday_name[["Wednesday"]] <- 4
+wday_name[["Thursday"]] <- 5
+wday_name[["Friday"]] <- 6
+wday_name[["Saturday"]] <- 7
+
 import_bills <- function(csv) {
+  
+  print("import_bills START:")
   
   #Import CSV
   file <- read.csv(csv, header=TRUE)
@@ -43,6 +54,8 @@ import_bills <- function(csv) {
     listof_bankaccounts[[bank_account_name]] <- rbind(df1,df2)          
   }
   
+  print("import_bills OUTPUT:")
+  print(listof_bankaccounts)
   return(listof_bankaccounts)    
   
 }
@@ -90,10 +103,14 @@ import_transfers <- function(csv) {
     listof_bankaccounts[[bank_account_name]] <- rbind(df1,df2)
   }
   
+  print("import_transfers:")
+  print(listof_bankaccounts)
   return(listof_bankaccounts)
   
 }
 
+print("merge_bankaccounts OUTPUT:")
+  
 # Now we have imported our CSVs into a common dataframe format.
   # However, since we did this in two different functions, we have two different 
   # sets of same bank accounts: one from bills, one from transfers.
@@ -111,6 +128,8 @@ merge_bankaccounts_lists <- function(list1,list2) {
     df2 <- list2[[bankaccount]]
     merged_list[[bankaccount]] <- rbind(df1,df2)           
   }
+  
+
   return(merged_list)
 }
 
@@ -128,8 +147,10 @@ merge_bankaccounts_lists <- function(list1,list2) {
 #' @param year An object of class "integer". Year.
 #' @return Returns an object of class "DataFrame". A DataFrame with the bank account data and real date values. Sorted by date.
 #' @examples
-#' januaryTransactions <- generate_month_from_bankaccount(genericTransactions,1,2022)
-generate_month_from_bankaccount <- function(bankaccount,month_num,year) {
+#' januaryTransactions <- list_transactions_dates_for_month(genericTransactions,1,2022)
+list_transactions_with_dates_for_month <- function(bankaccount,month_num,year) {
+  
+
   
   #Split number days and named weekdays into their own columns.
   bankaccount <-  bankaccount %>% 
@@ -158,12 +179,14 @@ generate_month_from_bankaccount <- function(bankaccount,month_num,year) {
   #Now convert the weekday rows into numbered_day rows and merge back into the same dataframe.
   if (nrow(weekdays) > 0) {
     weekdays <- split_weekdays_into_dates(weekdays,month_num,year)
+
     rbind(month,weekdays)
   }
   
   #Sort by date
   arrange(month,date)
   
+
   return(month)
   
 }
@@ -179,7 +202,7 @@ generate_month_from_bankaccount <- function(bankaccount,month_num,year) {
 #' @examples#' 
 #' #weekday_rows contains:
 #' # a transaction that occurs on Monday with a monthly total amount of $100. 
-#' januaryTransactions <- generate_month_from_bankaccount(transactions,1,2022) 
+#' januaryTransactions <- list_transactions_dates_for_month(transactions,1,2022) 
 #' #januaryTransactions contains: 
 #' # $25 on 01/03/22
 #' # $25 on 01/10/22
@@ -187,6 +210,8 @@ generate_month_from_bankaccount <- function(bankaccount,month_num,year) {
 #' # $25 on 01/24/22
 #' # $25 on 01/31/22
 split_weekdays_into_dates <- function(weekday_rows,month_num,year) {
+  
+
   
   # Prep DataFrame for output.
   dated_rows <- data.frame(
@@ -203,7 +228,7 @@ split_weekdays_into_dates <- function(weekday_rows,month_num,year) {
     if (is.na(weekday_name)) next
     
     # Split weekday into set of real dates with 1/4 the monthly value.
-    date <- get_weekdays_in_month(input_date,weekday_name)
+    date <- get_weekdays_in_month(weekday_name,month_num,year)
     name <- weekday_rows$name[i]
     amount <- (weekday_rows$amount[i])/4
     
@@ -213,7 +238,8 @@ split_weekdays_into_dates <- function(weekday_rows,month_num,year) {
     
   }
   
-  return(weekday_rows)
+
+  return(dated_rows)
   
 }
 
@@ -228,6 +254,8 @@ split_weekdays_into_dates <- function(weekday_rows,month_num,year) {
 #' Example output: 10/7/22, 10/14/22, 10/21/22, 10/28/22
 get_weekdays_in_month <- function(weekday_name,month_num,year) {
   
+
+  
   # To be honest, I think this is around where I started to invoke some dark magic that I don't understand and don't want to ask too much about.
   
   starting_date <- mdy(paste(month_num,1,year,sep = '-'))
@@ -240,6 +268,7 @@ get_weekdays_in_month <- function(weekday_name,month_num,year) {
   
   df <- filter(df, weekday == wday_name[[weekday_name]])
   
+
   return(df$date) 
 }
 
@@ -249,7 +278,10 @@ get_weekdays_in_month <- function(weekday_name,month_num,year) {
 #' @param year An object of class "integer". Year.
 #' @return Returns an object of class "DataFrame".
 #' @examples
-generate_days_in_month <- function(month_num,year) {
+get_list_of_days_in_month <- function(month_num,year) {
+  
+
+  
   starting_date <- mdy(paste(month_num,1,year,sep = '-'))
   
   length <- days_in_month(starting_date)
@@ -257,7 +289,10 @@ generate_days_in_month <- function(month_num,year) {
   df <- data.frame(
     date = seq.Date(from = starting_date, to = starting_date+length-1, by = 'days')
   )
-  return(df)
+  
+
+
+  return(seq.Date(from = starting_date, to = starting_date+length-1, by = 'days'))
 }  
 
 #' Given a generic bank account Data Frame, return a calendar of dates in a specific month with aggregate transaction amounts.
@@ -267,30 +302,37 @@ generate_days_in_month <- function(month_num,year) {
 #' @param year An object of class "integer". Year.
 #' @return Returns an object of class "DataFrame". 
 #' @examples
-generate_calendar_from_bankaccount <- function(bankaccount,month_num,year) {    
+aggregate_transactions_by_date_in_month <- function(bankaccount,month_num,year) {  
   
-  ShortCalendar <- generate_month_from_bankaccount(bankaccount,month_num,year)
+
+  
+  listOfTransactionsWithDates <- list_transactions_with_dates_for_month(bankaccount,month_num,year)
 
   date <- ymd(paste(year,month_num,1,sep = "-"))
   
-  ShortCalendar <-
-    ShortCalendar %>% 
+  listOfTransactionsWithDates <- listOfTransactionsWithDates %>% 
     group_by(date) %>%
     summarise(amount = sum(amount))
   
   #Now merge onto a calendar with list of transactions and cumulative balance
-  calendar = merge(
-    generate_days_in_month(month_num,year),
-    ShortCalendar, by="date", all=TRUE) 
+
+  month <- data.frame(
+                          date=get_list_of_days_in_month(month_num,year),
+                          amount=0)
+
+  month = merge(month,listOfTransactionsWithDates, by=c("date","amount"), all=TRUE) 
+
+  #calendar[is.na(calendar)] <- 0 #Replace NA values with 0.
   
-  
-  calendar[is.na(calendar)] <- 0 #Replace NA values with 0.
-  
-  return(calendar)
+
+
+
+  return(month)
   
 }
 
-#' Generate an a calendar of transactions for an arbitrary number of months.
+
+#' Generate an a calendar of transactions and cumulative balances for an arbitrary number of months.
 #'
 #' @param bankaccount A Generic bank account DataFrame.
 #' @param start_month_num An object of class "integer". Number of first month in calendar.
@@ -298,20 +340,37 @@ generate_calendar_from_bankaccount <- function(bankaccount,month_num,year) {
 #' @param num_months How many months to generate.
 #' @return Returns an object of class "DataFrame"
 #' @examples
-generate_seriesof_calendars <- function(bankaccount,start_month_num,start_year,num_months) {
-  date <- ymd(paste(start_year,start_month_num,1,sep = "-"))
-  lastCalendar <- generate_calendar_from_bankaccount(bankaccount,start_month_num,start_year)
-  looongCalendar <- data.frame()
-  looongCalendar <- rbind(looongCalendar,lastCalendar)
-  for (i in 2:num_months-1) {
+create_balance_sheet <- function(bankaccount,from_date,to_date) {
+  date <- from_date
+  list_of_months <- data.frame('date'=Date(),'amount'=numeric())
+  
+  # Generate n months of transaction lists.
+    # calculate N
+  num_months <- month(to_date)-month(from_date) + 1 + 12*(year(to_date)-year(from_date))
+
+  for (i in 1:num_months) {
     
-    lastCalendar <- generate_calendar_from_bankaccount(bankaccount,start_month_num+i,start_year)
-    looongCalendar <- rbind(looongCalendar,lastCalendar)
+    list_of_months <- rbind(list_of_months,
+                            aggregate_transactions_by_date_in_month(bankaccount,
+                                                                    month(date),
+                                                                    year(date)))
+    date <- date + months(1)
   }
-  return(looongCalendar)
+  
+  
+  balance_sheet <- list_of_months %>% 
+    # calculate cumulative sum column
+    mutate(balance = cumsum(amount)) %>%
+    #Filter dates outside parameters.
+    filter(between(date,from_date,to_date))
+  
+  return(balance_sheet)
 }
 
 bills <- import_bills('bills.csv')
+transfers <- import_transfers('transfers.csv')
+merge <- merge_bankaccounts_lists(bills,transfers)
 
-#generate_seriesof_calendars(bills[[5]],1,2022,6)
-generate_seriesof_calendars(bills[[5]],1,2022,6)
+from_date <- mdy('01-18-2022')
+to_date <- mdy('2-15-2022')
+create_balance_sheet(merge[[5]],from_date,to_date)
