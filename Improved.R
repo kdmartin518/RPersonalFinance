@@ -34,30 +34,11 @@ import_bills <- function(csv) {
   #Fill empty monthly_amount cells with 0.
   bills$monthly_amount[is.na(bills$monthly_amount)] <- 0
   
-  #Identify unique bank account names and count them.
-  unique_accounts = unique(bills$bank_account)
-  num_accounts = length(unique_accounts)
+  bills <- bills %>% 
+            transmute(bank_account = bank_account, accountor = accountor, day = day, name = name, monthly_amount = monthly_amount)
+            sort(bank_account,day,amount)
   
-  #Split the bills dataframe into a list of dataframes where each df contains data from a single unique bank account.
-  listof_bankaccounts <- list()
-  for(i in 1:num_accounts) {        
-    
-    #Get data from bank account
-    bank_account_name <- unique_accounts[i]
-    bank_account_data <- filter(bills, bank_account == bank_account_name)
-    
-    #Skip to next bank account if this one has no
-    if (nrow(bank_account_data) == 0) next
-    
-    #Bind the rows we just extracted to a new data frame in the list.
-    df1 <- listof_bankaccounts[[bank_account_name]] 
-    df2 <- transmute(bank_account_data, accountor = accountor, day = day, name = name, monthly_amount = monthly_amount)
-    listof_bankaccounts[[bank_account_name]] <- rbind(df1,df2)          
-  }
-  
-  print("import_bills OUTPUT:")
-  print(listof_bankaccounts)
-  return(listof_bankaccounts)    
+  return(bills)    
   
 }
 
