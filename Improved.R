@@ -14,13 +14,13 @@ wday_name[["Saturday"]] <- 7
 
 import_bills <- function(csv) {
   
-  print("import_bills START:")
+  
   
   #Import CSV
   file <- read.csv(csv, header=TRUE)
   
   #Load CSV into data frame
-  bills <- data.frame(
+  transaction_sheet <- data.frame(
     accountor = file$Accountor,
     bank_account = file$Bank.Account,
     day = as.numeric(file$Due.Day),
@@ -28,17 +28,19 @@ import_bills <- function(csv) {
     monthly_amount = as.numeric(gsub("\\$|,","",file$Monthly.Amount))
   )
   
+
+  
   #remove NA day values
-  bills <- filter(bills,!is.na(bills$day))
+  transaction_sheet <- filter(transaction_sheet,!is.na(transaction_sheet$day))
   
   #Fill empty monthly_amount cells with 0.
-  bills$monthly_amount[is.na(bills$monthly_amount)] <- 0
+  transaction_sheet$monthly_amount[is.na(transaction_sheet$monthly_amount)] <- 0
   
-  bills <- bills %>% 
-            transmute(bank_account = bank_account, accountor = accountor, day = day, name = name, monthly_amount = monthly_amount)
-            sort(bank_account,day,amount)
+  transaction_sheet <- transaction_sheet %>% 
+            transmute(bank_account = bank_account, accountor = accountor, day = day, name = name, monthly_amount = monthly_amount) %>%
+            arrange(bank_account)
   
-  return(bills)    
+  return(transaction_sheet)    
   
 }
 
@@ -65,29 +67,32 @@ import_transfers <- function(csv) {
   unique_accounts_from = unique(transfers$bank_account_from)
   unique_accounts_to = unique(transfers$bank_account_to)    
   
-  listof_bankaccounts <- list()
+  transaction_sheet <- data.frame(bank_account = character(), 
+                                 accountor = character(), 
+                                 day = character(), 
+                                 name = character(), 
+                                 monthly_amount= numeric()
+                                )
   
   for(i in 1:length(unique_accounts_from)) {
     bank_account_name <- unique_accounts_from[i]
     bank_account_data <- filter(transfers, bank_account_from == bank_account_name)
     if (nrow(bank_account_data) == 0) next
-    df1 <- listof_bankaccounts[[bank_account_name]] 
-    df2 <- transmute(bank_account_data, accountor = accountor, day = day, name = name, monthly_amount=-1*monthly_amount) #Notice here that monthly amount is multipied *-1.
-    listof_bankaccounts[[bank_account_name]] <- rbind(df1,df2)
+    transaction_sheet <- rbind(transaction_sheet,
+                       transmute(bank_account_data, bank_account = bank_account_name, accountor = accountor, day = day, name = name, monthly_amount=-1*monthly_amount)) #Notice here that monthly amount is multipied *-1.)
   }
   
   for(i in 1:length(unique_accounts_to)) {
     bank_account_name <- unique_accounts_to[i]
     bank_account_data <- filter(transfers, bank_account_to == bank_account_name)
     if (nrow(bank_account_data) == 0) next
-    df1 <- listof_bankaccounts[[bank_account_name]] 
-    df2 <- transmute(bank_account_data, accountor = accountor, day = day, name = name, monthly_amount=monthly_amount)
-    listof_bankaccounts[[bank_account_name]] <- rbind(df1,df2)
+    transaction_sheet <- rbind(transaction_sheet,
+                       transmute(bank_account_data, bank_account = bank_account_name, accountor = accountor, day = day, name = name, monthly_amount=monthly_amount))
   }
   
-  print("import_transfers:")
-  print(listof_bankaccounts)
-  return(listof_bankaccounts)
+  transaction_sheet <- arrange(transaction_sheet,bank_account)
+  
+  return(transaction_sheet)
   
 }
 
@@ -99,16 +104,10 @@ import_transfers <- function(csv) {
 # This function will take two lists of bank account dataframes and merge them into one.
 # Note that if list 2 contains a bank account that list 1 does not, that bank account
 # will be excluded from the merged result.
-merge_bankaccounts_lists <- function(list1,list2) {
-  merged_list <- list()
-  for (i in 1:length(list1)) {
-    bankaccount <- names(list1)[i]
-    df1 <- list1[[bankaccount]]
-    df2 <- list2[[bankaccount]]
-    merged_list[[bankaccount]] <- rbind(df1,df2)           
-  }
-
-  return(merged_list)
+merge_transaction_sheets <- function(sheet1,sheet2) {
+  merged_sheet <- rbind(sheet1,sheet2)
+  merged_sheet <- arrange(merged_sheet,bank_account)
+  return(merged_sheet)
 }
 
 # The day column is not very strict, and this is by design. 
@@ -120,16 +119,16 @@ merge_bankaccounts_lists <- function(list1,list2) {
 #'
 #' Given a generic bank account DataFrame and a month and year, generate the actual 
 #' dates that the bank account's transactions will land on in that month.
-#' @param bankaccount An object of class "DataFrame". An individual bank account.
+#' @param transaction_sheet An object of class "DataFrame". An individual bank account.
 #' @param month_num An object of class "integer". Number of intended month.
 #' @param year An object of class "integer". Year.
 #' @return Returns an object of class "DataFrame". A DataFrame with the bank account data and real date values. Sorted by date.
 #' @examples
 #' januaryTransactions <- list_transactions_dates_for_month(genericTransactions,1,2022)
-list_transactions_with_dates_for_month <- function(bankaccount,month_num,year) {
+list_transactions_with_dates_for_month <- function(transaction_sheet,month_num,year) {
   
   #Split number days and named weekdays into their own columns.
-  bankaccount <-  bankaccount %>% 
+  transaction_sheet <-  transaction_sheet %>% 
                   mutate(
                     weekday = ifelse(grepl("([A-Za-z])", day), day, NA),
                     day = as.integer(day)
@@ -138,14 +137,14 @@ list_transactions_with_dates_for_month <- function(bankaccount,month_num,year) {
                   arrange(day)
   
   #Now separate weekday rows and numbered day rows into two data frames.
-  weekdays <-   bankaccount %>% 
+  weekdays <-   transaction_sheet %>% 
                 filter(!is.na(weekday)) %>% 
                 transmute(
                   weekday_names = weekday,
                   name = name,
                   amount = monthly_amount
                 )
-  month <-   bankaccount %>% filter(is.na(weekday)) %>%
+  month <-   transaction_sheet %>% filter(is.na(weekday)) %>%
                   transmute(
                     date = ymd(paste(year,month_num,day,sep = " ")),
                     name = name,
@@ -160,7 +159,7 @@ list_transactions_with_dates_for_month <- function(bankaccount,month_num,year) {
   }
   
   #Sort by date
-  arrange(month,date)
+  month <- arrange(month,date)
 
   return(month)
   
@@ -262,14 +261,14 @@ get_list_of_days_in_month <- function(month_num,year) {
 
 #' Given a generic bank account Data Frame, return a calendar of dates in a specific month with aggregate transaction amounts.
 #'
-#' @param bankaccount A generic bank account DataFrame.
+#' @param transaction_sheet A generic bank account DataFrame.
 #' @param month_num An object of class "integer". Number of intended month.
 #' @param year An object of class "integer". Year.
 #' @return Returns an object of class "DataFrame". 
 #' @examples
-aggregate_transactions_by_date_in_month <- function(bankaccount,month_num,year) {  
+aggregate_transactions_by_date_in_month <- function(transaction_sheet,month_num,year) {  
   
-  listOfTransactionsWithDates <- list_transactions_with_dates_for_month(bankaccount,month_num,year)
+  listOfTransactionsWithDates <- list_transactions_with_dates_for_month(transaction_sheet,month_num,year)
 
   date <- ymd(paste(year,month_num,1,sep = "-"))
   
@@ -280,24 +279,49 @@ aggregate_transactions_by_date_in_month <- function(bankaccount,month_num,year) 
   #Now merge onto a calendar with list of transactions and cumulative balance
 
   month <- data.frame(
-                          date=get_list_of_days_in_month(month_num,year),
-                          amount=0)
+                          date=get_list_of_days_in_month(month_num,year))
 
-  month = merge(month,listOfTransactionsWithDates, by=c("date","amount"), all=TRUE) 
-
+  month = merge(month,listOfTransactionsWithDates, by=c("date"),all.x=TRUE) 
+    month[is.na(month)]=0
     return(month)
+  
+}
+
+aggregate_transactions_by_bankaccount <- function(transaction_sheet,month_num,year) {  
+  
+  unique_bankaccounts <- unique(transaction_sheet$bank_account)
+  num_bankaccounts <- length(unique_bankaccounts)
+  aggregated_sheet <- data.frame(
+    
+  )
+  
+  for (i in 1:num_bankaccounts) {
+    
+    this_bankaccount <- unique_bankaccounts[i]
+    
+    bankaccount_transactions <- transaction_sheet %>% 
+                                filter(bank_account == this_bankaccount) %>%
+                                transmute(day,name,monthly_amount)
+                                
+    bankaccount_transactions <- aggregate_transactions_by_date_in_month(bankaccount_transactions,month_num,year)
+    
+    bankaccount_transactions <- mutate(bankaccount_transactions,bank_account = this_bankaccount)
+    
+    aggregated_sheet <- rbind(aggregated_sheet,bankaccount_transactions)
+  }
+  return(aggregated_sheet)
   
 }
 
 #' Generate an a calendar of transactions and cumulative balances for an arbitrary number of months.
 #'
-#' @param bankaccount A Generic bank account DataFrame.
+#' @param transaction_sheet A Generic bank account DataFrame.
 #' @param start_month_num An object of class "integer". Number of first month in calendar.
 #' @param year An object of class "integer". First year of calendar.
 #' @param num_months How many months to generate.
 #' @return Returns an object of class "DataFrame"
 #' @examples
-create_balance_sheet <- function(bankaccount,from_date,to_date,starting_balance=0) {
+create_balance_sheet <- function(transaction_sheet,from_date,to_date) {
   date <- from_date
   list_of_months <- data.frame('date'=Date(),'amount'=numeric())
   
@@ -308,7 +332,7 @@ create_balance_sheet <- function(bankaccount,from_date,to_date,starting_balance=
   for (i in 1:num_months) {
     
     list_of_months <- rbind(list_of_months,
-                            aggregate_transactions_by_date_in_month(bankaccount,
+                            aggregate_transactions_by_bankaccount(transaction_sheet,
                                                                     month(date),
                                                                     year(date)))
     date <- date + months(1)
@@ -316,14 +340,12 @@ create_balance_sheet <- function(bankaccount,from_date,to_date,starting_balance=
   
   #Filter dates outside parameters.
   balance_sheet <- list_of_months %>% filter(between(date,from_date,to_date))
-    
-  #add custom starting balance
-  balance_sheet$amount[1] = starting_balance
   
   # calculate cumulative sum column
-  balance_sheet <- balance_sheet %>% mutate(balance = cumsum(amount)) 
-    
-  
+  balance_sheet <-  balance_sheet %>% 
+                    group_by(bank_account) %>% 
+                    mutate(balance = cumsum(amount)) 
+
   return(balance_sheet)
 }
 
@@ -332,17 +354,40 @@ draw_balance_sheet <- function(balance_sheet) {
   balance_sheet <- mutate(balance_sheet,month_group = as.character(month(date)))
 
   ggplot(data = balance_sheet, aes(x=date)) + 
-    geom_bar(aes(y=amount),stat="identity", fill=balance_sheet$month_group, show.legend = FALSE) + 
-    geom_line(aes(y=balance),stat="identity", col=balance_sheet$month_group, show.legend = FALSE)
+    geom_bar(aes(y=amount, fill=balance_sheet$bank_account),stat="identity", position="dodge") + 
+    geom_line(aes(y=balance, col=balance_sheet$bank_account),stat="identity", show.legend = FALSE)
   #scale_y_continuous(breaks=seq(-2000,2000, by = 250))
 
 }
 bills <- import_bills('bills.csv')
 transfers <- import_transfers('transfers.csv')
-merge <- merge_bankaccounts_lists(bills,transfers)
+merge <- merge_transaction_sheets(bills,transfers)
 
 from_date <- mdy('04-01-2022')
 to_date <- mdy('05-01-2022')
-balance_sheet <- create_balance_sheet(merge[[5]],from_date,to_date)
+
+balance_sheet <- create_balance_sheet(merge,from_date,to_date)
+
+predict_max_overdraft <- function(balance_sheet) {
+  
+  minimums <- balance_sheet %>% 
+              group_by(bank_account) %>% 
+              summarise(balance=min(balance)) %>% 
+              arrange(bank_account)
+  
+  minimums <- merge(minimums,balance_sheet,on=c('balance','bank_account'),all=FALSE)
+  minimums <- minimums[!duplicated(minimums$bank_account),]
+  minimums <- minimums %>% 
+              transmute(date,balance,bank_account) %>% 
+              filter(balance<0) %>%
+              arrange(date,balance,bank_account)
+  
+  return(minimums)
+}
+
+
+balance_sheet <- filter(balance_sheet,bank_account == 'Alysia Credit' | bank_account == 'Alysia Primary' | bank_account == 'Alysia Spending')
+
 
 draw_balance_sheet(balance_sheet)
+
