@@ -47,7 +47,6 @@ draw_balance_sheet <- function(balance_sheet) {
   
 }
 
-
 predict_max_overdraft <- function(balance_sheet) {
   
   minimums <- balance_sheet %>% 

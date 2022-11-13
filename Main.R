@@ -1,6 +1,6 @@
 library(tidyverse)
 library(tidyr)
-library("lubridate") 
+library(lubridate) 
 library(ggplot2)
 
 source('Constants.R')
@@ -25,3 +25,4 @@ alysia <- filter(balance_sheet,bank_account == 'Alysia Credit' | bank_account ==
 
 #Plot balance and transactions for this sheet.
 draw_balance_sheet(alysia)
+predict_max_overdraft(alysia)

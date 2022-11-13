@@ -93,3 +93,4 @@ merge_transaction_sheets <- function(sheet1,sheet2) {
   merged_sheet <- arrange(merged_sheet,bank_account)
   return(merged_sheet)
 }
+
