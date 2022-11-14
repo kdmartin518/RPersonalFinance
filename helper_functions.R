@@ -4,13 +4,16 @@ aggregate_transactions_by_bankaccount <- function(transaction_sheet,month_num,ye
   
   unique_bankaccounts <- unique(transaction_sheet$bank_account)
   num_bankaccounts <- length(unique_bankaccounts)
-  aggregated_sheet <- data.frame(
-    
-  )
-  
+  aggregated_sheet <- data.frame()
+  #special_transactions <- data.frame()
+  print(special_sheet)
   for (i in 1:num_bankaccounts) {
     
     this_bankaccount <- unique_bankaccounts[i]
+    
+    special_transactions <- special_sheet %>%
+                            filter(bank_account==this_bankaccount) %>%
+                            transmute(bank_account,date,amount)
     
     bankaccount_transactions <- transaction_sheet %>% 
       filter(bank_account == this_bankaccount) %>%
@@ -20,8 +23,18 @@ aggregate_transactions_by_bankaccount <- function(transaction_sheet,month_num,ye
     
     bankaccount_transactions <- mutate(bankaccount_transactions,bank_account = this_bankaccount)
     
+    if (nrow(special_transactions) > 0) {
+      bankaccount_transactions <- merge(bankaccount_transactions,special_transactions,on = "date",all=TRUE)
+      bankaccount_transactions <- bankaccount_transactions %>%
+                                  group_by(bank_account, date) %>%
+                                  summarise(amount = sum(amount))
+    }
+    
     aggregated_sheet <- rbind(aggregated_sheet,bankaccount_transactions)
   }
+  
+  
+  
   return(aggregated_sheet)
   
 }

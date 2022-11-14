@@ -55,7 +55,7 @@ import_transfers <- function(csv) {
                                   accountor = character(), 
                                   day = character(), 
                                   name = character(), 
-                                  monthly_amount= numeric()
+                                  monthly_amount = numeric()
   )
   
   for(i in 1:length(unique_accounts_from)) {
@@ -80,6 +80,35 @@ import_transfers <- function(csv) {
   
 }
 
+#This CSV contains special values on specific dates. Can be used, for example, to record starting balances for bank accounts.
+# Since this outputs a different format that the other two importers IE including a real date, it will need to be merged later on into balance sheet.
+import_special <- function(csv) {
+  
+  #Import CSV
+  file <- read.csv(csv, header=TRUE)
+  
+  #Load CSV into data frame
+  transaction_sheet <- data.frame(
+    bank_account = file$Bank.Account,
+    date = as.Date(mdy(file$Date)),
+    name = file$Name,
+    amount = as.numeric(gsub("\\$|,","",file$Amount))
+  )
+
+  #remove NA day values
+  transaction_sheet <- filter(transaction_sheet,!is.na(transaction_sheet$date))
+  
+  #Fill empty monthly_amount cells with 0.
+  transaction_sheet$monthly_amount[is.na(transaction_sheet$amount)] <- 0
+  
+  transaction_sheet <- transaction_sheet %>% 
+    transmute(bank_account,date,name,amount) %>%
+    arrange(bank_account)
+  
+  return(transaction_sheet)    
+  
+}
+
 # Now we have imported our CSVs into a common dataframe format.
 # However, since we did this in two different functions, we have two different 
 # sets of same bank accounts: one from bills, one from transfers.
@@ -92,5 +121,14 @@ merge_transaction_sheets <- function(sheet1,sheet2) {
   merged_sheet <- rbind(sheet1,sheet2)
   merged_sheet <- arrange(merged_sheet,bank_account)
   return(merged_sheet)
+}
+
+import_data <- function(bills,transfers) {
+  
+  bills <- import_bills(bills)
+  transfers <- import_transfers(transfers)
+  merge <- merge_transaction_sheets(bills,transfers)
+  
+  return(merge)
 }
 
