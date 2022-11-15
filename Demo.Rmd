@@ -1,0 +1,113 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Data is stored in three different CSVs, each for a different purpose.
+
+bills.csv keeps track of regular expenses for each bank account. transfers.csv keeps track of transfers occurring between bank accounts.
+
+These are recorded by the day of month or day of week along with the total monthly amount.
+
+special.csv keeps track of one-time transactions that occur on a specific date.
+
+Let's start by importing the data and seeing what it looks like.
+
+```{r}
+# Import  libraries and other functions.
+source("Main.R") 
+# Import data.
+transaction_sheet <- import_data('data/bills.csv','data/transfers.csv')
+special_sheet <- import_special('data/special.csv')
+
+print(transaction_sheet)
+```
+
+As you can see this is just a data frame with more or less the same information from the csv files. We can run all the usual R methods on it.
+
+```{r}
+
+print(
+  unique(transaction_sheet$bank_account)
+)
+
+```
+
+The first tool I developed to analyze my finances is create_balance_sheet().
+
+```{r}
+
+#Set range of dates to interact with
+from_date <- mdy('11-01-2022')
+to_date <- mdy('1-30-2023')
+
+#Create an aggregation of transactions per date per bank account.
+balance_sheet <- create_balance_sheet(transaction_sheet,from_date,to_date)
+
+print(balance_sheet)
+
+```
+
+Here we are listing the total of all transactions per date, per bank account, along with a running tally of those transactions (IE a balance column). This is a lot of data so let's filter it down a little.
+
+```{r}
+
+print(
+  filter(
+    balance_sheet,
+    between(date,mdy('11-05-22'),mdy('11-06-22'))
+  )
+)
+
+```
+
+I don't know why you'd want to see what came out of all of your accounts on a particular day, but you can do it! Actually this highlights the fact that balance_sheet contains a record of daily transactions and balances for each account in their own set of rows. This is useful for filtering and visualizing.
+
+Of course we can filter to only single particular bank account or set of bank accounts.
+
+```{r}
+
+alysia <- filter(balance_sheet,bank_account == 'Alysia Credit' | bank_account == 'Alysia Primary' | bank_account == 'Alysia Spending')
+
+print(alysia)
+
+```
+
+# predict_max_overdraft(balance_sheet)
+
+The second function is very useful. It will find the date and value of the balance furthest below 0 for each account in the sheet provided. See for yourself:
+
+```{r}
+
+print(
+  predict_max_overdraft(alysia)
+)
+
+```
+
+Keep in mind this doesn't tell us when the first day the account will be overdrawn: But it does tell us that we need to move \$681 in total to avoid a negative balance.
+
+# draw_balance_sheet(alysia)
+
+Finally, let's visualize the data.
+
+By default this function displays transactions and overall balance in a chart, separated into different color groups by bank account.
+
+```{r}
+
+draw_balance_sheet(balance_sheet)
+
+```
+
+It will display as many accounts for as wide a range of dates as you supply it. So we might want to filter it down a little. Hey, what about that overdraft?
+
+```{r}
+
+joint <- filter(balance_sheet,
+                bank_account=='Alysia Credit',
+                between(date,mdy('12-01-22'),mdy('12-31-22'))
+                )
+
+draw_balance_sheet(joint)
+
+```

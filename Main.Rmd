@@ -56,4 +56,14 @@ convert_bankaccount_to_month(bills[[5]],1,2022)
 
 ```
 
+Here is a list of features I'd like to demonstrate:
+
+1. Display budget data as an arbitrary month.
+  Note displaying multiple bank accounts in one graph or isolating n accounts.
+2. Note automatic weekday conversions.
+3. Note automatic transfer accounting.
+4. Note automatic overdraft detecting.
+5. Note input of special one-time transactons.
+
+
 
