@@ -40,9 +40,11 @@ draw_balance_sheet <- function(balance_sheet) {
   
   balance_sheet <- mutate(balance_sheet,month_group = as.character(month(date)))
   
+  account = balance_sheet$bank_account
+  
   ggplot(data = balance_sheet, aes(x=date)) + 
-    geom_bar(aes(y=amount, fill=balance_sheet$bank_account),stat="identity", position="dodge") + 
-    geom_line(aes(y=balance, col=balance_sheet$bank_account),stat="identity", show.legend = FALSE)
+    geom_bar(aes(y=amount, fill=account),stat="identity", position="dodge") + 
+    geom_line(aes(y=balance, col=account),stat="identity", show.legend = FALSE)
   #scale_y_continuous(breaks=seq(-2000,2000, by = 250))
   
 }

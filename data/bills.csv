@@ -1,34 +1,26 @@
-Accountor,Bank Account,Category,Subcategory,Due Day,Name,Monthly Amount,Autopay,Description
-Alysia,Alysia Credit,Bills,Phone,16,Sprint,-$51.00,Yes,
-Alysia,Alysia Credit,Healthcare,Health Insurance,1,LifeWise,-$341.00,Yes,PLEASE VALIDATE!
-Alysia,Alysia Credit,Healthcare,Copays,1,Copays,-$150.00,,
-Alysia,Alysia Primary,Debt,Credit Minimum Payment,5,Discover,-$77.00,No,
-Alysia,Alysia Primary,Debt,Credit Minimum Payment,11,Sephora,-$30.00,?,
-Alysia,Alysia Primary,Debt,Medical Debt,13,ER Visit,-$70.00,,Starts 11/13
-Alysia,Alysia Primary,Debt,Credit Minimum Payment,20,Ulta,-$30.00,No,
-Alysia,Alysia Primary,Bills,Auto Loan,22,Numerica Car Loan,-$280.00,No,
-Alysia,Alysia Primary,Debt,Credit Minimum Payment,28,Capital One 1,-$30.00,No,
-Alysia,Alysia Primary,Debt,Credit Minimum Payment,28,Capital One 2,-$30.00,No,
-Alysia,Alysia Credit,Bills,Gas,1,Gas,-$140.00,No,
-Joint,Joint Primary,Subscriptions,Pet Insurance,1,Fetch,-$61.19,Yes,"42.48 on 1st, 18.71 on 18th"
-Joint,Joint Primary,Rent,Rent,4,Rent ,"-$1,220.95",Yes,Includes Transaction fee of 95 cents.
-Joint,Joint Primary,Essentials,Electric,6,Avista,-$83.00,Yes,Amt reflects Comfort Level (Not Enrolled Yet)
-Joint,Joint Primary,Rent,Renter’s Insurance,15,Homesite,-$18.17,Yes,
-Joint,Joint Primary,Bills,Subscriptions,15,Netflix,-$21.79,Yes,
-Joint,Joint Primary,Bills,Auto Insurance,15,Progressive,-$180.00,Yes,Progressive
-Joint,Joint Primary,Minimum Payments,Credit,15,Citi,-$35.00,No,
-Joint,Joint Primary,Bills,Internet,19,Xfinity,-$55.00,Yes,
-Joint,Joint Primary,Groceries,House Supplies,1,Chewy Autoship,-$208.00,,Not initiated yet.
-Joint,Joint Spending,Groceries,Food,1,Groceries,-$300.00,,
-Kevin,Kevin Credit,Bills,Subscriptions,4,PhotoSync,-$0.99,Yes,
-Kevin,Kevin Credit,Essentials,Phone Bill,12,Visible,-$25.00,Yes,
-Kevin,Kevin Credit,Bills,Services,14,Dreamhost,-$7.99,Yes,
-Kevin,Kevin Credit,Bills,Services,18,Proton Mail ,-$12.00,Yes,
-Kevin,Kevin Credit,Bills,Services,20,Webo Nextcloud,-$3.57,Yes,
-Kevin,Kevin Credit,Bills,Subscriptions,23,Apple Music,-$10.00,Yes,
-Kevin,Kevin Credit,Debt,Credit Minimum Payment,23,Minimum Payment,$74.00,Yes,
-Kevin,Kevin Credit,Bills,Services,08/30/23,BitWarden,-$10.00,Yes,Annual payment
-Kevin,Kevin Credit,Essentials,Gas,1,Gas,-$200.00,No,
-Kevin,Kevin Primary,Debt,Credit Minimum Payment,28,To Kevin USBank Credit 2228,-$44.00,Yes,44 per web on 10/7
-Kevin,Kevin Primary,Debt,Credit Minimum Payment,1,To Kevin Primary Credit,-$74.00,Yes,74 per web on 10/7
-Kevin,Kevin Primary,Debt,Credit Minimum Payment,19,To Kevin Discover Credit,,,$30 per website on 9/19
+Accountor,Bank Account,Category,Subcategory,Due Day,Name,Monthly Amount
+Alice,Alice Credit,Bills,Phone Bill,16,Phone,-$51.00
+Alice,Alice Credit,Healthcare,Health Insurance,1,Health Insurance,-500
+Alice,Alice Credit,Healthcare,Copays,1,Copays,-$150.00
+Alice,Alice Primary,Debt,Credit Minimum Payment,5,Credit Card A,-$77.00
+Alice,Alice Primary,Debt,Credit Minimum Payment,11,Credit Card B,-$30.00
+Alice,Alice Primary,Debt,Credit Minimum Payment,20,Credit Card C,-$30.00
+Alice,Alice Primary,Bills,Auto Loan,22,Car Loan,-$280.00
+Alice,Alice Credit,Bills,Gas,1,Gas,-$140.00
+Joint,Joint Primary,Subscriptions,Pet Insurance,1,Fetch,-$61.19
+Joint,Joint Primary,Rent,Rent,4,Rent ,"-$1,720.95"
+Joint,Joint Primary,Essentials,Electric,6,Electric Company,-$100.00
+Joint,Joint Primary,Bills,Subscriptions,15,Netflix,-$21.79
+Joint,Joint Primary,Bills,Auto Insurance,15,Auto Insurance,-$180.00
+Joint,Joint Primary,Minimum Payments,Credit,15,Credit Card D,-$35.00
+Joint,Joint Primary,Bills,Internet,19,Xfinity,-$55.00
+Joint,Joint Primary,Groceries,House Supplies,1,Pet Supplies,-$208.00
+Joint,Joint Spending,Groceries,Food,1,Groceries,-$200.00
+Bob,Bob Credit,Bills,Subscriptions,4,Web app A,-$0.99
+Bob,Bob Credit,Essentials,Phone Bill,12,Phone,-$25.00
+Bob,Bob Credit,Bills,Services,14,Web app B,-$7.99
+Bob,Bob Credit,Bills,Services,18,Web app C,-$12.00
+Bob,Bob Credit,Bills,Services,20,Web App D,-$3.57
+Bob,Bob Credit,Bills,Subscriptions,23,Spotify,-$10.00
+Bob,Bob Credit,Debt,Credit Minimum Payment,23,Credit Card E,$74.00
+Bob,Bob Credit,Essentials,Gas,1,Gas,-$200.00

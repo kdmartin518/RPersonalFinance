@@ -3,111 +3,140 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-Data is stored in three different CSVs, each for a different purpose.
+```{r Setup, include=FALSE, message=FALSE, warning=FALSE}
+# Import  libraries and other functions.
+source("Main.R") 
+```
 
-bills.csv keeps track of regular expenses for each bank account. transfers.csv keeps track of transfers occurring between bank accounts.
+# Intro
+
+I wrote this program to help me learn R and to help me manage my personal finances. So far it has done a good job of both! In this document you will find an overview of the main functions of this program. IE how to use it. If you are interested in the development side, I welcome you to dig through the code in the GitHub repository here. 
+
+## Premise
+
+This program helps the user manage their personal finances across many accounts by taking a set of simple budget data and predicting account balances into the future.
+
+## Format
+
+Data is stored in three different CSVs, each for a different purpose:
+
+*bills.csv* keeps track of regular expenses for each bank account. *transfers.csv* keeps track of transfers occurring between bank accounts.
 
 These are recorded by the day of month or day of week along with the total monthly amount.
 
-special.csv keeps track of one-time transactions that occur on a specific date.
+*special.csv* keeps track of one-time transactions that occur on a specific date. This is useful to input a starting balance for a given month, or noting an annually-recurring bill.
+
+# Getting started
 
 Let's start by importing the data and seeing what it looks like.
 
-```{r}
-# Import  libraries and other functions.
-source("Main.R") 
-# Import data.
+
+```{r Import Data, message=FALSE, warning=FALSE}
 transaction_sheet <- import_data('data/bills.csv','data/transfers.csv')
 special_sheet <- import_special('data/special.csv')
-
-print(transaction_sheet)
 ```
 
-As you can see this is just a data frame with more or less the same information from the csv files. We can run all the usual R methods on it.
+You're welcome to investigate these data frames yourself to see what's inside. They are more or less the same as the CSVs, which is to say the budget lines for a bunch of bank accounts. We can review one account at a time by filtering:
 
-```{r}
-
-print(
-  unique(transaction_sheet$bank_account)
-)
-
+```{r warning = FALSE}
+filter(transaction_sheet,bank_account=="Alice Primary")
+```
+```{r warning = FALSE}
+filter(transaction_sheet,bank_account=="Bob Primary")
 ```
 
-The first tool I developed to analyze my finances is create_balance_sheet().
+Note that Bob's budgets are scheduled by days of the week. Alice's in comparison are scheduled by day of month. This will be important in a moment.
 
-```{r}
+# Balance Sheets
 
-#Set range of dates to interact with
+Now that we've imported our budgets, let's turn them into a a set of balance sheets. A balance sheet looks like your bank statement. Here you'll see the sum of transactions on each day of the month with a running tally at the end of the day on the side. 
+
+## create_balance_sheet()
+
+Given a transaction sheet like the one we created earlier, create_balance_sheet() will create a set of balance sheets. It will automatically create one sheet for each bank account listed in the transaction sheet. It will create a balance sheet for as large a date range as your specify.
+
+*Note: dates are given in Lubridate format.*
+```{r message=FALSE, warning=FALSE}
 from_date <- mdy('11-01-2022')
-to_date <- mdy('1-30-2023')
+to_date <- mdy('12-1-2022')
 
-#Create an aggregation of transactions per date per bank account.
 balance_sheet <- create_balance_sheet(transaction_sheet,from_date,to_date)
+glimpse(balance_sheet)
+```
+There are 251 rows. That's 8 accounts * 31 days each. Let's filter out to the accounts we care about right now.
 
-print(balance_sheet)
-
+```{r warning=FALSE}
+alice <- filter(balance_sheet,bank_account=="Alice Primary")
+alice
 ```
 
-Here we are listing the total of all transactions per date, per bank account, along with a running tally of those transactions (IE a balance column). This is a lot of data so let's filter it down a little.
-
-```{r}
-
-print(
-  filter(
-    balance_sheet,
-    between(date,mdy('11-05-22'),mdy('11-06-22'))
-  )
-)
-
+```{r warning=FALSE}
+bob <- filter(balance_sheet,bank_account=="Bob Primary")
+bob
 ```
 
-I don't know why you'd want to see what came out of all of your accounts on a particular day, but you can do it! Actually this highlights the fact that balance_sheet contains a record of daily transactions and balances for each account in their own set of rows. This is useful for filtering and visualizing.
+## Weekday transactions
 
-Of course we can filter to only single particular bank account or set of bank accounts.
+Take a close look at Bob's account. Notice how there's a few repeating transactions, such as the -70 on 11/11, 11/18, 11/25, and so on. Notice also that 70 = 280/4, and 280 is the monthly value of Bob's Credit Card Payment which recurs on Fridays.
 
-```{r}
+If a bill is listed as occurring on a named weekday, it will be automatically split up onto all of that weekday in the month, at 1/4 of the monthly value. 
 
-alysia <- filter(balance_sheet,bank_account == 'Alysia Credit' | bank_account == 'Alysia Primary' | bank_account == 'Alysia Spending')
+# Predicting overdrafts
 
-print(alysia)
+## predict_max_overdraft(balance_sheet)
 
+This function is very useful. It will find the date and value of the balance furthest below 0 for each account in the sheet provided. See for yourself:
+
+```{r warning=FALSE}
+joint <- filter(balance_sheet,bank_account=="Joint Primary")
+predict_max_overdraft(joint)
 ```
 
-# predict_max_overdraft(balance_sheet)
+Keep in mind this doesn't tell us when the first day the account will be overdrawn: But it does tell us that we need to move $517 in total to avoid a negative balance.
 
-The second function is very useful. It will find the date and value of the balance furthest below 0 for each account in the sheet provided. See for yourself:
+# Visualizing
 
-```{r}
-
-print(
-  predict_max_overdraft(alysia)
-)
-
-```
-
-Keep in mind this doesn't tell us when the first day the account will be overdrawn: But it does tell us that we need to move \$681 in total to avoid a negative balance.
-
-# draw_balance_sheet(alysia)
+## draw_balance_sheet()
 
 Finally, let's visualize the data.
 
-By default this function displays transactions and overall balance in a chart, separated into different color groups by bank account.
+By default this function displays transactions and overall balance in a chart, separated into different color groups by bank account. It's a combination chart, with a line part representing the running balance and bars representing total transactions on a given day. 
 
-```{r}
+It will display as many accounts for as wide a range of dates as you supply it, which can get messy fast.
 
+```{r message=FALSE, warning=FALSE}
 draw_balance_sheet(balance_sheet)
-
 ```
 
-It will display as many accounts for as wide a range of dates as you supply it. So we might want to filter it down a little. Hey, what about that overdraft?
+So we might want to filter it down a little. 
 
-```{r}
-
+```{r message=FALSE, warning=FALSE}
 joint <- filter(balance_sheet,
-                bank_account=='Alysia Credit',
-                between(date,mdy('12-01-22'),mdy('12-31-22'))
+                bank_account=='Joint Primary',
+                between(date,mdy('11-01-22'),mdy('11-30-22'))
                 )
-
 draw_balance_sheet(joint)
-
 ```
+
+By the way, we can use this to analyze that overdraft we found out about earlier. Let's zoom in to just that week.
+
+```{r message=FALSE, warning=FALSE}
+joint <- filter(balance_sheet,
+                bank_account=='Joint Primary',
+                between(date,mdy('11-01-22'),mdy('11-8-22'))
+                )
+draw_balance_sheet(joint)
+```
+So here we see what our account looks like around the date of the most negative balance. Looks like there's a large deduction that day. We can get more details about that time range this way:
+
+```{undefined message=FALSE, warning=FALSE}
+overdraft <- transaction_sheet %>% 
+              filter(
+                     bank_account=="Joint Primary",
+                     between(day,1,7)
+                    ) %>%
+              transmute(day,name,monthly_amount)
+overdraft
+```
+
+Yep, so it looks like we are a little short for rent this month. But we know by exactly how much, so as long as we move $518 into Joint Primary by 11/4, we should be able to cover it!

@@ -6,7 +6,6 @@ aggregate_transactions_by_bankaccount <- function(transaction_sheet,month_num,ye
   num_bankaccounts <- length(unique_bankaccounts)
   aggregated_sheet <- data.frame()
   #special_transactions <- data.frame()
-  print(special_sheet)
   for (i in 1:num_bankaccounts) {
     
     this_bankaccount <- unique_bankaccounts[i]
@@ -106,8 +105,7 @@ list_transactions_with_dates_for_month <- function(transaction_sheet,month_num,y
   #Now convert the weekday rows into numbered_day rows and merge back into the same dataframe.
   if (nrow(weekdays) > 0) {
     weekdays <- split_weekdays_into_dates(weekdays,month_num,year)
-    
-    rbind(month,weekdays)
+    month <- rbind(month,weekdays)
   }
   
   #Sort by date
@@ -161,7 +159,7 @@ split_weekdays_into_dates <- function(weekday_rows,month_num,year) {
     dated_rows <- rbind(dated_rows,df)
     
   }
-  
+
   return(dated_rows)
   
 }
