@@ -1,10 +1,10 @@
 ---
 title: "RPersonalFinance"
 output:
-  pdf_document: default
-  html_notebook: default
   html_document:
     df_print: paged
+  pdf_document: default
+  html_notebook: default
 ---
 
 ```{r Setup, include=FALSE, message=FALSE, warning=FALSE}
@@ -14,7 +14,9 @@ source("setup.R")
 
 # Intro
 
-I wrote this program to help me learn R and to help me manage my personal finances. So far it has done a good job of both! In this document you will find an overview of the main functions of this program. IE how to use it. If you are interested in the development side, I welcome you to dig through the code in the GitHub repository here. 
+I wrote this program to help me learn R and to help me manage my personal finances. So far it has done a good job of both! In this document you will find an overview of the main functions of this program. IE how to use it. 
+
+If you are interested in the development side, I welcome you to dig through the code in the [GitHub repository here.](https://github.com/kdmartin518/RPersonalFinance)
 
 ## Premise
 
@@ -133,7 +135,7 @@ draw_balance_sheet(joint)
 ```
 So here we see what our account looks like around the date of the most negative balance. Looks like there's a large deduction that day. We can get more details about that time range this way:
 
-```{undefined message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 overdraft <- transaction_sheet %>% 
               filter(
                      bank_account=="Joint Primary",

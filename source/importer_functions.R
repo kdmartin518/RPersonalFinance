@@ -1,3 +1,5 @@
+# Functions to help import budget sheets into the program.
+
 import_bills <- function(csv) {
   
   #Import CSV
@@ -11,8 +13,6 @@ import_bills <- function(csv) {
     name = file$Name,
     monthly_amount = as.numeric(gsub("\\$|,","",file$Monthly.Amount))
   )
-  
-  
   
   #remove NA day values
   transaction_sheet <- filter(transaction_sheet,!is.na(transaction_sheet$day))
@@ -28,7 +28,6 @@ import_bills <- function(csv) {
   
 }
 
-# This function is almost identical to import_bills. I'll comment where they diverge.
 import_transfers <- function(csv) {
   
   #Import CSV
@@ -80,8 +79,6 @@ import_transfers <- function(csv) {
   
 }
 
-#This CSV contains special values on specific dates. Can be used, for example, to record starting balances for bank accounts.
-# Since this outputs a different format that the other two importers IE including a real date, it will need to be merged later on into balance sheet.
 import_special <- function(csv) {
   
   #Import CSV
@@ -109,14 +106,6 @@ import_special <- function(csv) {
   
 }
 
-# Now we have imported our CSVs into a common dataframe format.
-# However, since we did this in two different functions, we have two different 
-# sets of same bank accounts: one from bills, one from transfers.
-# We would like to be able to combine them into a singular set of dataframes.
-
-# This function will take two lists of bank account dataframes and merge them into one.
-# Note that if list 2 contains a bank account that list 1 does not, that bank account
-# will be excluded from the merged result.
 merge_transaction_sheets <- function(sheet1,sheet2) {
   merged_sheet <- rbind(sheet1,sheet2)
   merged_sheet <- arrange(merged_sheet,bank_account)

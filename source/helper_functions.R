@@ -1,27 +1,31 @@
-#the set of functions that user_functions.R require to run correctly.
-
+#' Given a set of transaction sheets ordered by bank account, aggregate each bank account's transactions by date.
+#'
+#' @param transaction_sheet An object of class "data.frame". 
+#' @param month_num An object of class "integer". Number of intended month.
+#' @param year An object of class "integer". Year.
+#' @return Returns an object of class "data.frame". 
 aggregate_transactions_by_bankaccount <- function(transaction_sheet,month_num,year) {  
+  aggregated_sheet <- data.frame()
   
   unique_bankaccounts <- unique(transaction_sheet$bank_account)
   num_bankaccounts <- length(unique_bankaccounts)
-  aggregated_sheet <- data.frame()
-  #special_transactions <- data.frame()
+
+  #Iterate through each bank account in transaction_sheet
   for (i in 1:num_bankaccounts) {
-    
     this_bankaccount <- unique_bankaccounts[i]
-    
-    special_transactions <- special_sheet %>%
-                            filter(bank_account==this_bankaccount) %>%
-                            transmute(bank_account,date,amount)
-    
     bankaccount_transactions <- transaction_sheet %>% 
-      filter(bank_account == this_bankaccount) %>%
-      transmute(day,name,monthly_amount)
+                                filter(bank_account == this_bankaccount) %>%
+                                transmute(day,name,monthly_amount)
     
+    # Get an individual transaction sheet for this account and month.
     bankaccount_transactions <- aggregate_transactions_by_date_in_month(bankaccount_transactions,month_num,year)
-    
     bankaccount_transactions <- mutate(bankaccount_transactions,bank_account = this_bankaccount)
     
+    # Check for any special transactions for this account and month.
+    # If there are any, merge them into the output.
+    special_transactions <- special_sheet %>%
+      filter(bank_account==this_bankaccount) %>%
+      transmute(bank_account,date,amount)
     if (nrow(special_transactions) > 0) {
       bankaccount_transactions <- merge(bankaccount_transactions,special_transactions,on = "date",all=TRUE)
       bankaccount_transactions <- bankaccount_transactions %>%
@@ -29,48 +33,45 @@ aggregate_transactions_by_bankaccount <- function(transaction_sheet,month_num,ye
                                   summarise(amount = sum(amount))
     }
     
+    #Bind rows for this account and month into the output.
     aggregated_sheet <- rbind(aggregated_sheet,bankaccount_transactions)
   }
   
-  
-  
   return(aggregated_sheet)
-  
 }
 
-#' Given a generic bank account Data Frame, return a calendar of dates in a specific month with aggregate transaction amounts.
+#' Given a transaction sheet for a single bank account, aggregate transactions by day of month.
 #'
-#' @param transaction_sheet A generic bank account DataFrame.
+#' @param transaction_sheet An object of class "data.frame".
 #' @param month_num An object of class "integer". Number of intended month.
 #' @param year An object of class "integer". Year.
-#' @return Returns an object of class "DataFrame". 
-#' @examples
+#' @return Returns an object of class "data.frame". 
 aggregate_transactions_by_date_in_month <- function(transaction_sheet,month_num,year) {  
-  
-  listOfTransactionsWithDates <- list_transactions_with_dates_for_month(transaction_sheet,month_num,year)
-  
   date <- ymd(paste(year,month_num,1,sep = "-"))
   
+  #Convert this bank account's generic days into dates for this month.
+  listOfTransactionsWithDates <- list_transactions_with_dates_for_month(transaction_sheet,month_num,year)
   listOfTransactionsWithDates <- listOfTransactionsWithDates %>% 
     group_by(date) %>%
     summarise(amount = sum(amount))
   
-  #Now merge onto a calendar with list of transactions and cumulative balance
+  #Set up a frame with number of days in this month.
+  month <- data.frame(date=get_list_of_days_in_month(month_num,year))
   
-  month <- data.frame(
-    date=get_list_of_days_in_month(month_num,year))
-  
+  #Merge aggregate transactions onto month.
   month = merge(month,listOfTransactionsWithDates, by=c("date"),all.x=TRUE) 
-  month[is.na(month)]=0
-  return(month)
   
+  #Turn na values to 0.
+  month[is.na(month)]=0
+  
+  return(month)
 }
 
 #' Apply true month dates to bank account.
 #'
 #' Given a generic bank account DataFrame and a month and year, generate the actual 
 #' dates that the bank account's transactions will land on in that month.
-#' @param transaction_sheet An object of class "DataFrame". An individual bank account.
+#' @param transaction_sheet An object of class "data.frame". An individual bank account.
 #' @param month_num An object of class "integer". Number of intended month.
 #' @param year An object of class "integer". Year.
 #' @return Returns an object of class "DataFrame". A DataFrame with the bank account data and real date values. Sorted by date.
@@ -112,17 +113,16 @@ list_transactions_with_dates_for_month <- function(transaction_sheet,month_num,y
   month <- arrange(month,date)
   
   return(month)
-  
 }
 
 #' Convert and split a DataFrame of weekday transactions into frame with true dates.
 #'
 #' Given a month, year, and a DataFrame with a list of transactions listed as occurring weekly on every "___day" in a month,
 #' Find the true date of each of those weekdays in that month and create a new transaction line with 1/4 of the "monthly_amount".
-#' @param weekday_rows An object of class "DataFrame". Contains rows of transaction information where "day" is a weekday like "Monday".
+#' @param weekday_rows An object of class "data.frame". Contains rows of transaction information where "day" is a weekday like "Monday".
 #' @param month_num An object of class "integer". Number of intended month.
 #' @param year An object of class "integer". Year.
-#' @return Returns an object of class "DataFrame". A DataFrame of transactions with actual dates in the given month.
+#' @return Returns an object of class "data.frame". A DataFrame of transactions with actual dates in the given month.
 #' @examples#' 
 #' #weekday_rows contains:
 #' # a transaction that occurs on Monday with a monthly total amount of $100. 
@@ -166,11 +166,11 @@ split_weekdays_into_dates <- function(weekday_rows,month_num,year) {
 
 #' Find the actual dates that a given weekday land on in a month.
 #'
-#' @param weekday_name The name of a given week.
+#' @param weekday_name An object of class "character". The name of a given week.
 #' @param month_num An object of class "integer". Number of intended month.
 #' @param year An object of class "integer". Year.
 #' @return Returns an object of class "List". A List with the true dates.
-#' @examples
+
 #' Example input: Oct, 2022, Friday
 #' Example output: 10/7/22, 10/14/22, 10/21/22, 10/28/22
 get_weekdays_in_month <- function(weekday_name,month_num,year) {
@@ -194,8 +194,7 @@ get_weekdays_in_month <- function(weekday_name,month_num,year) {
 #'
 #' @param month_num An object of class "integer". Number of intended month.
 #' @param year An object of class "integer". Year.
-#' @return Returns an object of class "DataFrame".
-#' @examples
+#' @return Returns an object of class "data.frame".
 get_list_of_days_in_month <- function(month_num,year) {
   
   starting_date <- mdy(paste(month_num,1,year,sep = '-'))

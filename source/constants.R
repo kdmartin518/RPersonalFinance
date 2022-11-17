@@ -1,3 +1,4 @@
+#Included to ease translation between weekday names and numbers.
 wday_name <- list()
 wday_name[["Sunday"]]     <- 1
 wday_name[["Monday"]]     <- 2
