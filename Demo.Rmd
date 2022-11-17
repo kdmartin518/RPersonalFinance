@@ -9,7 +9,7 @@ output:
 
 ```{r Setup, include=FALSE, message=FALSE, warning=FALSE}
 # Import  libraries and other functions.
-source("Main.R") 
+source("setup.R") 
 ```
 
 # Intro
