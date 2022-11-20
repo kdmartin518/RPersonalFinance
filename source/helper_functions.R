@@ -25,6 +25,7 @@ aggregate_transactions_by_bankaccount <- function(transaction_sheet,month_num,ye
     # If there are any, merge them into the output.
     special_transactions <- special_sheet %>%
       filter(bank_account==this_bankaccount) %>%
+      filter(month(date)==month_num) %>%
       transmute(bank_account,date,amount)
     if (nrow(special_transactions) > 0) {
       bankaccount_transactions <- merge(bankaccount_transactions,special_transactions,on = "date",all=TRUE)
@@ -36,7 +37,7 @@ aggregate_transactions_by_bankaccount <- function(transaction_sheet,month_num,ye
     #Bind rows for this account and month into the output.
     aggregated_sheet <- rbind(aggregated_sheet,bankaccount_transactions)
   }
-  
+
   return(aggregated_sheet)
 }
 
